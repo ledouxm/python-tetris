@@ -19,21 +19,19 @@ def make_grid():
 
 
 class Grid:
-    grid = make_grid()
+    def __init__(self, grid = make_grid()):
+        self.grid = grid
 
-    def get_max_x(self, piece: Piece):
-        y = piece.y
-        for x in range(piece.x, len(self.grid)):
-            is_possible = self.is_move_possible(piece=piece, x=x, y=y)
+    def get_max_x(self, piece, x:int, y:int):
+        for current_x in range(x, len(self.grid)):
+            is_possible = self.is_move_possible(piece=piece, x=current_x, y=y)
             if not is_possible:
-                return x - 1
+                return current_x - 1
         return len(self.grid) - 1
 
     def is_move_possible(self, piece: Piece, x: int, y: int):
-        print("isMovePossible")
         cells = piece.get_coordinates(x, y)
         for coord in cells:
-            print("testing", coord)
             h, v = distance_from_bounds(coord[0], coord[1])
             is_out = h != 0 or v != 0
 
@@ -45,10 +43,11 @@ class Grid:
 
         return True
 
-    def try_piece(self, piece: Piece):
+    def try_piece(self, piece: Piece, y = None):
         copy = deepcopy(self.grid)
-        x = self.get_max_x(piece)
+        x = self.get_max_x(piece, piece.x, y)
 
+        if(y != None): piece.y = y
         piece.x = x
         cells = piece.get_coordinates()
 
@@ -57,6 +56,11 @@ class Grid:
                 copy[coord[0]][coord[1]] = piece.base_piece["name"]
 
         return copy
+
+    def apply_piece_copy(self, piece: Piece, y: int):
+        newGrid = self.try_piece(piece, y)
+        return newGrid
+
 
     def apply_piece(self, piece: Piece):
         newGrid = self.try_piece(piece)
@@ -89,5 +93,20 @@ class Grid:
         for line_to_clear in lines:
             self.grid.pop(line_to_clear)
             self.grid.insert(0, make_line())
+
+    def get_peaks(self):
+        peaks = []
+        while(len(peaks) < NB_COLUMNS):
+            x = 0
+            while(self.grid[x][len(peaks)] == EMPTY_CELL and x < NB_ROWS - 1):
+                x += 1
+            peaks.append(x)
+        print(peaks)
+        return peaks
+
+            
+
+
+
         
 

@@ -1,12 +1,10 @@
-from tkinter.constants import ALL, END, LEFT, W
+from tkinter.constants import ALL, END, LEFT, TRUE, W
 from grid import Grid
 from game import Tetris
 import tkinter as tk
-from utils import colors_by_piece_name
+from utils import NB_COLUMNS, NB_ROWS, colors_by_piece_name
 
 CELL_SIZE = 40
-NB_COLUMNS = 10
-NB_ROWS = 20
 WIDTH = CELL_SIZE * NB_COLUMNS
 HEIGHT = CELL_SIZE * NB_ROWS
 
@@ -32,31 +30,41 @@ def draw_game(canvas: tk.Canvas, game: Tetris):
 win = tk.Tk()
 canvas = tk.Canvas(win, width=WIDTH, height=(HEIGHT + OFFSET_TOP))
 
-game = Tetris(seed='salutàtouss')
+def update(game: Tetris):
+    canvas.delete(ALL)
+    draw_grid(canvas, game.draw_current_piece())
 
-def tick():
-    game.tick()
-    draw_game(canvas, game)
-    win.after(game.tick_interval, tick)
-
-tick()
+game = Tetris(seed='salutàtouss', update=update)
 
 def on_key_pressed(event):
-    if(event.char not in events_map): return
+    if(event.char not in press_events_map): return
     # canvas.delete(ALL)
 
-    events_map[event.char]()
+    press_events_map[event.char]()
     draw_game(canvas, game)
 
-events_map = {
+def on_key_released(event):
+    if(event.char not in release_events_map): return
+
+    press_events_map[event.char]()
+    draw_game(canvas, game)
+
+
+press_events_map = {
     "q": game.go_left,
-    "s": game.drop_current_piece,
     "d": game.go_right,
     "e": game.rotate_clockwise,
     "a": game.rotate_counter_clockwise,
+    "s": game.start_soft_drop,
+    " ": game.drop_current_piece
+}
+
+release_events_map = {
+    "s": game.stop_soft_drop()
 }
 
 win.bind('<KeyPress>', on_key_pressed)
+win.bind('<KeyRelease>', on_key_released)
 
 canvas.pack()
 

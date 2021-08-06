@@ -1,6 +1,9 @@
+from tkinter.constants import S
+from utils import NB_COLUMNS
 from grid import Grid
 from random import Random, shuffle
 from pieces import Piece, possible_rotations, single_pieces, get_piece_with_rotation
+import time
 
 weight_generator = Random()
 
@@ -30,22 +33,17 @@ class Tetris:
     grid: Grid
     status: str
     score: int
+    is_soft_dropping = False
+    interval = None
     
-    def __init__(self, seed):
+    def __init__(self, seed = "", update = None):
         self.grid = Grid()
+        self.update = update
         self.score = 0
         self.status = "playing"
         self.generator = Random()
         self.generator.seed(seed)
         self.queue = make_random_queue(self.generator)
-
-    def tick(self):
-        if(self.status == "lost"): return
-
-        current_piece = self.get_current_piece()
-        if self.grid.is_move_possible(current_piece, current_piece.x + 1, current_piece.y):
-            current_piece.x += 1
-        else: self.drop_current_piece()
 
     def get_current_piece(self) -> Piece:
         return self.queue[0]
@@ -101,6 +99,45 @@ class Tetris:
 
         current_piece = self.get_current_piece()
         current_piece.set_rotation((current_piece.rotation - 90) % 360)
+
+    def start_soft_drop(self):
+        self.is_soft_dropping = True
+        # self.interval.cancel()
+
+    def stop_soft_drop(self):
+        print("stop")
+        self.is_soft_dropping = False
+
+    def get_interval(self):
+        if(self.is_soft_dropping): 
+            return 50
+        return self.tick_interval
+
+    def get_next_states(self):
+        states = {}
+
+        current_piece = self.get_current_piece()
+        piece_name = current_piece.base_piece["name"]
+        if(piece_name == "O"):
+            rotations = [0]
+        elif(piece_name == "I"):
+            rotations = [0, 90]
+        else: rotations = [0, 90, 180, 270]
+
+        for rotation in rotations:
+            piece = Piece(get_piece_with_rotation(piece_name, rotation))
+            min_y = min([coord["y"] for coord in piece.base_piece['cells']])
+            max_y = max([coord["y"] for coord in piece.base_piece["cells"]])
+
+        for y in range(-min_y, NB_COLUMNS - max_y):
+            self.grid.get_max_x(piece, 0, y)
+            new_grid = self.grid.apply_piece_copy(current_piece, y)
+            states[(y, rotation)] = new_grid
+
+        return states
+
+            
+
 
 
 lines_cleared_scores = {
