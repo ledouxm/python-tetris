@@ -316,6 +316,10 @@ base_pieces = np.array([
         "cells": [
             {
                 "x": 0,
+                "y": 2,
+            },
+            {
+                "x": 0,
                 "y": 1,
             },
             {
@@ -325,10 +329,6 @@ base_pieces = np.array([
             {
                 "x": 0,
                 "y": -1,
-            },
-            {
-                "x": 0,
-                "y": -2,
             },
         ],
         "rotation": 180,
@@ -629,7 +629,7 @@ for base_piece in base_pieces:
 
 possible_rotations = [0, 90, 180, 270]
 
-def get_piece_with_random_rotation(piece_name: str, rotation: int):
+def get_piece_with_rotation(piece_name: str, rotation: int):
     for piece in base_pieces:
         if piece["name"] == piece_name and piece["rotation"] == rotation:
             return piece
@@ -637,25 +637,26 @@ def get_piece_with_random_rotation(piece_name: str, rotation: int):
 class Piece:
     base_piece
     rotation: 0
-    x = 0
+    x = 3
     y = round(NB_COLUMNS / 2)
 
     def __init__(self, piece):
         self.base_piece = piece
+        self.rotation = piece["rotation"]
 
-    def get_coordinates(self, x = -1, y = -1):
+    def get_coordinates(self, x = -float('inf'), y = -float('inf')):
         coords = []
-        if(x == -1): x = self.x
-        if(y == -1): y = self.y
+        if(x == -float('inf')): x = self.x
+        if(y == -float('inf')): y = self.y
 
-        for cell in base_piece["cells"]:
+        for cell in self.base_piece["cells"]:
             newX = cell["x"] + x
             newY = cell["y"] + y
             coords.append(np.array([newX, newY]))
         
         return coords
 
-    def snap_to_grid(self):
+    def snap_to_grid(self, only_horizontal = False):
         vertical = 0
         horizontal = 0
 
@@ -668,5 +669,19 @@ class Piece:
             if(currentV != 0 and abs(currentV - vertical) >= 0):
                 vertical = currentV
 
-        self.x += vertical
+        if(not only_horizontal): self.x += vertical
+        print("snapping h", horizontal)
         self.y += horizontal 
+
+    def try_rotation(self, new_rotation):
+        if(not new_rotation % 90 == 0): return
+
+        
+
+    def set_rotation(self, new_rotation):
+        if(not new_rotation % 90 == 0): return
+        
+        self.base_piece = get_piece_with_rotation(self.base_piece['name'], new_rotation)
+        self.rotation = new_rotation
+
+        self.snap_to_grid(True)

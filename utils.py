@@ -49,3 +49,5 @@ def log_grid(grid):
         str = ""
         for y in range(len(grid[x])):
             str+=grid[x][y]
+
+        print(str)

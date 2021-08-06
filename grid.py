@@ -1,6 +1,7 @@
 
 from pieces import Piece
-from utils import CURRENT_CELL, EMPTY_CELL, NB_COLUMNS, NB_ROWS, distance_from_bounds, is_empty, is_empty_or_current, is_out_of_bounds, log_grid
+from utils import CURRENT_CELL, EMPTY_CELL, NB_COLUMNS, NB_ROWS, distance_from_bounds, is_empty_or_current, is_out_of_bounds
+from copy import deepcopy
 
 
 def make_line():
@@ -22,32 +23,35 @@ class Grid:
 
     def get_max_x(self, piece: Piece):
         y = piece.y
-        for x in range(len(self.grid)):
+        for x in range(piece.x, len(self.grid)):
             is_possible = self.is_move_possible(piece=piece, x=x, y=y)
             if not is_possible:
                 return x - 1
         return len(self.grid) - 1
 
     def is_move_possible(self, piece: Piece, x: int, y: int):
+        print("isMovePossible")
         cells = piece.get_coordinates(x, y)
         for coord in cells:
+            print("testing", coord)
             h, v = distance_from_bounds(coord[0], coord[1])
             is_out = h != 0 or v != 0
 
             empty = True
             if(not is_out): empty = is_empty_or_current(self.grid[coord[0]][coord[1]])
 
-            if (is_out and v < 0) or not empty:
+            if (is_out and v <= 0) or not empty:
                 return False
 
         return True
 
-    def try_piece(self, piece:Piece):
-        copy = self.grid.copy()
+    def try_piece(self, piece: Piece):
+        copy = deepcopy(self.grid)
         x = self.get_max_x(piece)
 
         piece.x = x
         cells = piece.get_coordinates()
+
         for coord in cells:
             if not is_out_of_bounds(coord[0], coord[1]):
                 copy[coord[0]][coord[1]] = piece.base_piece["name"]
@@ -56,12 +60,34 @@ class Grid:
 
     def apply_piece(self, piece: Piece):
         newGrid = self.try_piece(piece)
+
         self.grid = newGrid
 
     def draw_current_piece(self, piece: Piece):
-        copy = self.grid.copy()
+        copy = deepcopy(self.grid)
         cells = piece.get_coordinates()
+
         for coord in cells:
             if(not is_out_of_bounds(coord[0], coord[1])):
                 copy[coord[0]][coord[1]] = CURRENT_CELL
+                
         return copy
+
+    def get_lines_to_clear(self):
+        lines_to_clear = []
+        for x in range(len(self.grid)):
+            is_to_clear = True
+            for y in range(len(self.grid[x])):
+                if self.grid[x][y] == EMPTY_CELL:
+                    is_to_clear = False
+
+            if is_to_clear: lines_to_clear.append(x)
+
+        return lines_to_clear
+
+    def clear_lines(self, lines):
+        for line_to_clear in lines:
+            self.grid.pop(line_to_clear)
+            self.grid.insert(0, make_line())
+        
+
